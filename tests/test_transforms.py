@@ -60,6 +60,12 @@ class HashlineOps(unittest.TestCase):
         self.assertEqual(out["arguments"]["input"], "[src/a.js#1A2B]\nPUT 2.=4:\n+x = 1")
         self.assertTrue(c.notes)
 
+    def test_colonless_range_needs_body(self):   # A/B round 1: "PUT 12.=12" followed by body rows
+        out = hashline.apply(call("edit", {"input": "[a.js#1A2B]\nPUT 12.=12\n+x = 1"}), ctx())
+        self.assertIn("PUT 12.=12:\n", out["arguments"]["input"])
+        bare = call("edit", {"input": "[a.js#1A2B]\nPUT 12.=12"})
+        self.assertEqual(hashline.apply(bare, ctx()), bare)
+
     def test_body_rows_untouched(self):
         out = hashline.apply(call("edit", {"input": "[a.js#1A2B]\nPUT 1.=1:\n+PUT 2*:=4: stays as text"}), ctx())
         self.assertIn("+PUT 2*:=4: stays as text", out["arguments"]["input"])

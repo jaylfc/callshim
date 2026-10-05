@@ -58,6 +58,11 @@ def apply(call: dict, ctx) -> dict:
         if line.startswith("+"):
             continue
         repaired = fix_op(line)
+        # A colonless "PUT A.=B" is omp's clipboard form; it only means "replace with these rows" when body rows
+        # follow. Without a body, adding ":" would turn it into a delete, so leave it for omp to explain.
+        if repaired and repaired.startswith("PUT") and not line.rstrip().endswith(":") and "=" in line:
+            if not (i + 1 < len(lines) and lines[i + 1].startswith("+")):
+                continue
         if repaired:
             ctx.note("hashline", line, repaired, "op header repaired")
             lines[i] = repaired
