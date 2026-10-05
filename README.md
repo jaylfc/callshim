@@ -17,7 +17,7 @@ harness  ->  callshim proxy  ->  model server
 ## Why a proxy
 - **Harness-agnostic.** Every shim is a rewrite of the model's tool-call arguments, and the proxy sees all of them. It also sees the tool list the harness offers, so it can map an invented name (`read_file`, `Bash`, `list_files`) onto a real tool.
 - **Prompt cache safe.** When a later request carries a rewritten call in its history, the proxy restores the model's original call. The model always sees its own tokens, and the server's prompt cache stays an exact prefix.
-- **Auditable.** Every rewrite is logged with its before and after. A browser translation also prints one `[ebms] ...` line in the tool output.
+- **Auditable.** Every rewrite is logged with its before and after. A browser translation also prints one `[callshim] ...` line in the tool output.
 - **Conservative.** A rewrite happens only for shapes known to be unambiguous. Anything else is left for the harness to report.
 
 ## Transforms
@@ -44,7 +44,7 @@ A shim can also hurt: one report found that a repair proxy lowered a small model
 ## Use
 ```
 python -m callshim.proxy --upstream http://127.0.0.1:8080 --listen 127.0.0.1:8090 \
-    --profile profiles/qwen3.8-flash-next-coder.json --state ebms-state.json --log ebms-log.jsonl
+    --profile profiles/qwen3.8-flash-next-coder.json --state callshim-state.json --log callshim-log.jsonl
 ```
 Point the harness's base URL at `http://127.0.0.1:8090/v1`.
 - `--off`: everything passes through unchanged, which gives an A/B baseline through the same proxy.
