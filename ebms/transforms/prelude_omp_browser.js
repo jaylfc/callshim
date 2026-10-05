@@ -38,6 +38,9 @@ if (!globalThis.__ebms_browser && globalThis.browser) { globalThis.__ebms_browse
       if (n && typeof n === "object") { say("browser.tab({name}) -> browser.tab(name)"); n = n.name ?? "main"; }
       return wrapTab(B.tab(n));
     },
+    // Elicitation: with no API docs the model writes browser.goto(url) / browser.navigate(url).
+    async goto(a, b) { say("browser.goto(url) -> browser.open({url})"); return wrapTab(await B.open(openArgs(a, b))); },
+    async navigate(a, b) { say("browser.navigate(url) -> browser.open({url})"); return wrapTab(await B.open(openArgs(a, b))); },
     tabs: (...x) => B.tabs(...x),
     close: (...x) => B.close(...x),
   });

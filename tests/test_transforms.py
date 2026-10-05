@@ -101,6 +101,32 @@ class Aliases(unittest.TestCase):
         self.assertEqual(out["name"], "web_search"); self.assertEqual(out["arguments"], {"query": "ios text select"})
 
 
+class ElicitedShapes(unittest.TestCase):
+    """Shapes from the open-mode elicitation (experiments/004-ebms/elicitation-analysis.md)."""
+    def test_call_generic_unwrapped(self):
+        out = aliases.apply(call("call_generic", {"tool": "list_directory", "arguments": {"path": "/work", "depth": 2}}), ctx())
+        self.assertEqual(out["name"], "glob")
+
+    def test_nested_arguments(self):
+        out = aliases.apply(call("execute_shell", {"arguments": {"command": "ls /work/"}}), ctx())
+        self.assertEqual(out, {"id": "c1", "name": "bash", "arguments": {"command": "ls /work/"}})
+
+    def test_leading_space_name(self):
+        out = aliases.apply(call(" read_file", {"path": "a.js"}), ctx())
+        self.assertEqual(out["name"], "read")
+
+    def test_fetch_url_to_read(self):
+        out = aliases.apply(call("fetch_url", {"url": "https://developer.mozilla.org/x"}), ctx())
+        self.assertEqual(out, {"id": "c1", "name": "read", "arguments": {"path": "https://developer.mozilla.org/x"}})
+
+    def test_context_replacement_to_replace_mode(self):
+        tools = dict(OMP_TOOLS, edit={"type": "object", "properties": {"path": {"type": "string"}, "old_string": {"type": "string"},
+                 "new_string": {"type": "string"}, "replace_all": {"type": "boolean"}}, "required": ["path", "old_string", "new_string"]})
+        c = Context(profile=PROFILE, tools=tools, state=State(None))
+        out = aliases.apply(call("edit_file", {"path": "src/game.js", "context": "SPEED = 2", "replacement": "SPEED = 3"}), c)
+        self.assertEqual(out, {"id": "c1", "name": "edit", "arguments": {"path": "src/game.js", "old_string": "SPEED = 2", "new_string": "SPEED = 3"}})
+
+
 class EvalBrowser(unittest.TestCase):
     def test_prelude_added_to_js(self):
         out = eval_browser.apply(call("eval", {"language": "js", "code": "const t = await browser.open('http://x')"}), ctx())

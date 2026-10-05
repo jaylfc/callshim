@@ -14,12 +14,13 @@ TOOL_ALIASES = {
     "read": ["read_file", "readfile", "view", "view_file", "open_file", "cat", "file_read", "get_file", "show_file", "read_many_files"],
     "write": ["write_file", "writefile", "create_file", "save_file", "file_write", "create"],
     "edit": ["edit_file", "update_text_file", "replace", "str_replace", "str_replace_editor", "apply_edit", "modify_file", "multiedit"],
-    "bash": ["run_shell_command", "shell", "execute_bash", "terminal", "run_command", "execute_command", "exec", "sh", "run"],
+    "bash": ["run_shell_command", "shell", "execute_bash", "execute_shell", "terminal", "run_command", "execute_command", "exec", "sh", "run"],
     "grep": ["search", "search_file_content", "grep_search", "find_in_files", "ripgrep", "rg", "code_search", "search_code"],
     "glob": ["list_files", "list_dir", "list_directory", "ls", "find_files", "file_search", "glob_files", "list"],
     "find": ["list_files", "list_dir", "list_directory", "ls", "find_files", "file_search"],
     "web_search": ["websearch", "google_web_search", "search_web", "internet_search", "tavily_search", "brave_search", "google_search"],
     "fetch": ["web_fetch", "webfetch", "fetch_url", "http_get", "browse", "open_url"],
+    "read@url": ["web_fetch", "webfetch", "fetch_url", "http_get", "browse", "open_url"],   # harnesses that read URLs
     "todo": ["todowrite", "todo_write", "write_todos", "update_plan"],
     "task": ["agent", "invoke_agent", "spawn_agent", "delegate", "subagent"],
 }
@@ -31,6 +32,8 @@ ARG_ALIASES = {
     "cwd": ["workdir", "working_directory", "directory", "dir"],
     "pattern": ["regex", "search_pattern", "query", "search", "glob"],
     "content": ["text", "file_text", "contents", "data", "body"],
+    "old_string": ["context", "old_str", "search", "find", "original", "old_text"],
+    "new_string": ["replacement", "new_str", "replace", "new_text", "updated"],
     "query": ["q", "search_query", "search_term", "prompt"],
     "timeout": ["timeout_ms", "timeout_seconds"],
 }
@@ -55,10 +58,21 @@ def _target_tool(name: str, tools: dict, profile: dict) -> str | None:
     key = name.lower()
     for target, names in table.items():
         if key == target or key in (n.lower() for n in names):
-            hit = _offered(target, tools)
+            hit = _offered(target.split("@")[0], tools)
             if hit:
                 return hit
     return None
+
+
+def _unwrap(name: str, args):
+    """Wrappers the model invents: call_generic{tool, arguments}, or {"arguments": {...}} inside the real call."""
+    name = name.strip()
+    if isinstance(args, dict) and name.lower() in ("call_generic", "call_tool", "use_tool", "invoke_tool") \
+            and isinstance(args.get("tool"), str) and isinstance(args.get("arguments"), dict):
+        return args["tool"].strip(), args["arguments"]
+    if isinstance(args, dict) and set(args) == {"arguments"} and isinstance(args["arguments"], dict):
+        return name, args["arguments"]
+    return name, args
 
 
 def _coerce(value, schema: dict):
@@ -122,7 +136,7 @@ def _fit_args(args: dict, schema: dict, tool: str, ctx, call_name: str) -> dict:
 
 
 def apply(call: dict, ctx) -> dict:
-    name, args = call["name"], call["arguments"]
+    name, args = _unwrap(call["name"], call["arguments"])
     if not isinstance(args, dict):
         return call
     target = _target_tool(name, ctx.tools, ctx.profile)
@@ -133,7 +147,7 @@ def apply(call: dict, ctx) -> dict:
     required = schema.get("required") or []
     if any(r not in fitted for r in required):
         return call   # cannot make a valid call; let the harness explain the real tool
-    if target != name or fitted != args:
-        ctx.note("aliases", {"name": name, "arguments": args}, {"name": target, "arguments": fitted},
-                 f"{name} -> {target}" if target != name else f"{name}: arguments")
+    if target != call["name"] or fitted != call["arguments"]:
+        ctx.note("aliases", {"name": call["name"], "arguments": call["arguments"]}, {"name": target, "arguments": fitted},
+                 f"{call['name']} -> {target}" if target != call["name"] else f"{name}: arguments")
     return {**call, "name": target, "arguments": fitted}

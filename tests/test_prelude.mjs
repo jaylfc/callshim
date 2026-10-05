@@ -49,5 +49,8 @@ await assert.rejects(judge({ prompt: "Describe this screenshot", images: ["/tmp/
 const before = logs.length;
 await browser.open({ name: "x", url: "http://y" }); await judge("s", { a: { type: "bool", instructions: "ok?" } });
 assert.equal(logs.length, before);
+// 10. browser.goto / navigate from elicitation
+await browser.goto("http://localhost:8201");
+assert.deepEqual(calls.at(-1), ["open", { name: "main", url: "http://localhost:8201" }]);
 console.log = origLog;
 console.log("prelude ok;", logs.length, "translations logged:", [...new Set(logs)].join(" | ").slice(0, 300));
