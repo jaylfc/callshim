@@ -1,0 +1,1 @@
+The tests in test/ fail. Fix the bugs in src/stats.js so that `node --test` passes. Do not change the tests. Commit your fix with git when the tests pass.

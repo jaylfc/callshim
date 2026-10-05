@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""EBMS elicitation (experiment 004): ask the model to use vaguely described tools and record the call shapes it invents.
+"""callshim elicitation: ask the model to use vaguely described tools and record the call shapes it invents.
 
 usage: tools/elicit.py BASE_URL MODEL [--samples 3] [--domains edit,browser] [--out FILE]
 Production-like settings: medium effort, 3072 thinking budget, temperature 1.0 / top_p 0.95 / top_k 20.
@@ -12,8 +12,8 @@ import pathlib
 import time
 import urllib.request
 
-LAB = pathlib.Path(__file__).resolve().parent.parent
-SPEC = json.loads((LAB / "experiments" / "004-ebms" / "tasks.json").read_text())
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+SPEC = json.loads((ROOT / "elicit" / "tasks.json").read_text())
 SYSTEM = "You are a coding agent. Use the tools provided to complete the user's request. Call a tool; do not just describe what you would do."
 
 
@@ -54,7 +54,7 @@ def main():
     ap.add_argument("base"); ap.add_argument("model")
     ap.add_argument("--samples", type=int, default=3)
     ap.add_argument("--domains", default="open,edit,browser", help="open = every category in tasks.json 'open'")
-    ap.add_argument("--out", default=str(LAB / "experiments" / "004-ebms" / "elicit.jsonl"))
+    ap.add_argument("--out", default=str(ROOT / "results" / "local" / "elicit.jsonl"))
     a = ap.parse_args()
     out = pathlib.Path(a.out)
     done = set()

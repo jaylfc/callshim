@@ -1,0 +1,1 @@
+{"name":"roman","type":"module","scripts":{"test":"node --test"}}

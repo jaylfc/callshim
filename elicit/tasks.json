@@ -1,0 +1,115 @@
+{
+ "edit": {
+  "tool": {
+   "type": "function",
+   "function": {
+    "name": "edit_file",
+    "description": "Apply a change to an existing file in the workspace. Express the change in whatever format you find most natural.",
+    "parameters": {
+     "type": "object",
+     "properties": {},
+     "additionalProperties": true
+    }
+   }
+  },
+  "file": "src/game.js",
+  "content": "import { clamp } from './util.js';\n\nexport const SPEED = 2;\nexport const MAX_HP = 100;\n\nexport function move(p, dx, dy) {\n  p.x += dx * SPEED;\n  p.y += dy * SPEED;\n  return p;\n}\n\nexport function heal(p, amount) {\n  p.hp = p.hp + amount;\n  return p;\n}\n\nexport function damage(p, amount) {\n  p.hp = clamp(p.hp - amount, 0, MAX_HP);\n  return p.hp === 0;\n}\n\nexport function describe(p) {\n  return `Player at ${p.x},${p.y} with ${p.hp} HP`;\n}\n",
+  "tasks": [
+   "Change SPEED from 2 to 3.",
+   "heal() can push hp above MAX_HP. Fix it so hp never exceeds MAX_HP.",
+   "Rename the function describe to label everywhere in this file.",
+   "Add a new exported function teleport(p, x, y) after move() that sets the position directly and returns p.",
+   "Delete the damage function entirely.",
+   "Add a JSDoc comment above move() describing its parameters.",
+   "Make move() ignore NaN dx or dy values (treat them as 0).",
+   "Change the describe() text to include the player's name: p.name.",
+   "Insert `export const MIN_HP = 0;` right after MAX_HP and use it in damage().",
+   "Replace the import line so it also imports lerp from './util.js'.",
+   "Change two things: SPEED to 4 and MAX_HP to 120.",
+   "Add a line at the very end of the file: `export default { move, heal, damage, describe };`"
+  ]
+ },
+ "browser": {
+  "tool": {
+   "type": "function",
+   "function": {
+    "name": "browser",
+    "description": "Run code against a real headless browser. A browser automation API is available in this code. The value of the last expression, or anything you return, is sent back to you.",
+    "parameters": {
+     "type": "object",
+     "properties": {
+      "code": {
+       "type": "string",
+       "description": "Code to run."
+      }
+     },
+     "required": [
+      "code"
+     ]
+    }
+   }
+  },
+  "tasks": [
+   "Open http://localhost:8201 and tell me the page title.",
+   "Open http://localhost:8201 and report any JavaScript console errors.",
+   "Open http://localhost:8201, click the button with the text 'New Game', and report what the page shows afterwards.",
+   "Open http://localhost:8201 and take a screenshot saved to /tmp/home.png.",
+   "Open http://localhost:8201 as an iPhone 14 Pro Max in landscape and take a screenshot to /tmp/land.png.",
+   "Open http://localhost:8201, press the Enter key twice, then read the text inside the element #log.",
+   "Open http://localhost:8201 and check whether the element #dpad overlaps the canvas element (compare their bounding boxes).",
+   "Open http://localhost:8201 and tap at screen coordinates (120, 300) on a touch device, then report which element is at that point.",
+   "Open http://localhost:8201 and wait until the element .menu appears, then list the text of every item in it.",
+   "Open http://localhost:8201 and read the value of window.gameState.player.hp from the page.",
+   "Open http://localhost:8201, fill the input #name with 'Ash' and submit the form #login.",
+   "Open http://localhost:8201 and list every failed network request."
+  ]
+ },
+ "open": {
+  "system": "You are a coding agent working in a JavaScript game repository at /work. You have tools for everything a coding agent normally needs, but no tool list is given to you. Call the tools you expect to exist, in your normal tool-call format, with the tool name and arguments you would expect them to have. Make the calls; do not describe them.",
+  "categories": {
+   "read": [
+    "Show me the contents of src/game.js.",
+    "Show me lines 40 to 80 of server/net.js.",
+    "Look at package.json and tell me the start script."
+   ],
+   "write": [
+    "Create a new file src/version.js that exports VERSION = '1.2.0'.",
+    "Overwrite README.md with a one-line description of the game."
+   ],
+   "edit": [
+    "In src/game.js change `export const SPEED = 2;` to `export const SPEED = 3;`.",
+    "In src/game.js, rename the function describe to label everywhere.",
+    "In client/css/style.css, add `z-index: 2;` to the `#dpad .l` rule."
+   ],
+   "search": [
+    "Find every place the string 'MAX_HP' is used in the repo.",
+    "Which files define a function called handleInput?"
+   ],
+   "list": [
+    "What files are in the client/js folder?",
+    "Find all .test.js files in the repo."
+   ],
+   "shell": [
+    "Run the test suite.",
+    "Start the dev server on port 8201 in the background and check that it responds."
+   ],
+   "web_search": [
+    "Search the web for how to prevent text selection on iOS Safari.",
+    "Find the latest version of the ws npm package online."
+   ],
+   "web_fetch": [
+    "Fetch https://developer.mozilla.org/en-US/docs/Web/CSS/touch-action and summarise what values it takes."
+   ],
+   "browser": [
+    "Open http://localhost:8201 in a browser, check for console errors and take a screenshot.",
+    "Open http://localhost:8201 as an iPhone 14 Pro Max in landscape and tap the A button at (790, 200)."
+   ],
+   "todo": [
+    "Plan this work as a checklist before starting: add sound effects, add a mute button, save the mute setting."
+   ],
+   "subagent": [
+    "Ask a helper agent to review /tmp/shot.png and tell you whether the D-pad overlaps the game screen."
+   ]
+  }
+ }
+}

@@ -1,0 +1,1 @@
+The tests in test/ fail. Make all of them pass by changing src/names.js only. Commit with git when they pass.

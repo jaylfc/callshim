@@ -1,0 +1,7 @@
+{
+ "description": "Six separate edits to one file; hidden tests.",
+ "needs": [
+  "node>=20",
+  "git"
+ ]
+}

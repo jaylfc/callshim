@@ -1,0 +1,8 @@
+{
+ "description": "Measure a served page in a real browser and write a JSON report.",
+ "needs": [
+  "node>=20",
+  "git",
+  "browser"
+ ]
+}

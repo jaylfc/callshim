@@ -1,0 +1,1 @@
+Make every change listed in README.md to src/inventory.js so that the tests pass and every rule in the README holds. Do not change the tests. Commit with git when done.

@@ -1,0 +1,14 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lantern Run</title><link rel="icon" href="data:,">
+<style>
+ body { margin: 0; background: #111; height: 100vh; display: flex; align-items: center; justify-content: center; }
+ #game { width: 480px; height: 360px; background: #234; }
+ #dpad { position: fixed; left: 200px; top: 120px; width: 120px; height: 120px; background: #555; }
+ #ab { position: fixed; right: 20px; bottom: 20px; width: 100px; height: 60px; background: #a33; }
+</style></head>
+<body><canvas id="game" width="320" height="240"></canvas><div id="dpad"></div><div id="ab"></div>
+<script>
+ window.gameState = { player: { hp: 37, name: "Ash" }, zone: "quay" };
+ console.error("sprite sheet missing: /art/heroes.png");
+</script></body></html>

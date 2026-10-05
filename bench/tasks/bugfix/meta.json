@@ -1,0 +1,7 @@
+{
+ "description": "Fix three bugs so the given tests pass.",
+ "needs": [
+  "node>=20",
+  "git"
+ ]
+}

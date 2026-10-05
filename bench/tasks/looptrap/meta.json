@@ -1,0 +1,7 @@
+{
+ "description": "A fix that tempts repeated identical attempts; tests given.",
+ "needs": [
+  "node>=20",
+  "git"
+ ]
+}

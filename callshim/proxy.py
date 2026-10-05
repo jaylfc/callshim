@@ -6,7 +6,8 @@ usage: python -m callshim.proxy --upstream http://127.0.0.1:8080 --listen 127.0.
 
 Only POST .../chat/completions is rewritten; every other path is passed through. Streamed tool-call deltas are
 buffered until the call is complete, rewritten, and sent as one delta; text and reasoning stream through
-unchanged. --off forwards everything untouched (for A/B runs through the same proxy).
+unchanged. --off keeps the request handling and the per-call log but applies no tool-call transforms, so an
+A/B baseline through the same proxy differs only in the transforms.
 """
 from __future__ import annotations
 
@@ -47,7 +48,7 @@ def rewrite_call(call: dict, tools: dict) -> tuple[dict, list]:
         return call, []
     ctx = Context(profile=PROFILE, tools=tools, state=STATE, experimental=ARGS.experimental)
     cur = {"id": call["id"], "name": call["name"], "arguments": args}
-    for name, fn in call_transforms():
+    for name, fn in ([] if ARGS.off else call_transforms()):
         if ctx.enabled(name):
             try:
                 cur = fn(cur, ctx)
@@ -73,7 +74,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         n = int(self.headers.get("Content-Length") or 0)
         raw = self.rfile.read(n) if n else b""
-        rewrite = not ARGS.off and self.path.rstrip("/").endswith("/chat/completions")
+        rewrite = self.path.rstrip("/").endswith("/chat/completions")
         if rewrite:
             try:
                 body = json.loads(raw)
@@ -150,6 +151,7 @@ class Handler(BaseHTTPRequestHandler):
             for tc in msg.get("tool_calls") or []:
                 fn = tc.get("function") or {}
                 new, notes = rewrite_call({"id": tc.get("id"), "name": fn.get("name"), "arguments": fn.get("arguments")}, self._tools)
+                log({"kind": "call", "tool": new["name"], "rewritten": bool(notes)})
                 if notes:
                     fn["name"], fn["arguments"] = new["name"], new["arguments"]
                     log({"kind": "rewrite", "id": tc.get("id"), "tool": new["name"], "notes": notes})
@@ -165,6 +167,7 @@ class Handler(BaseHTTPRequestHandler):
             for idx in sorted(pending):
                 c = pending[idx]
                 new, notes = rewrite_call({"id": c["id"], "name": c["name"], "arguments": c["arguments"]}, self._tools)
+                log({"kind": "call", "tool": new["name"], "rewritten": bool(notes)})
                 if notes:
                     log({"kind": "rewrite", "id": c["id"], "tool": new["name"], "notes": notes})
                 calls.append({"index": idx, "id": new["id"], "type": "function",
@@ -224,13 +227,19 @@ def main():
     p.add_argument("--profile", required=True)
     p.add_argument("--state", default="")
     p.add_argument("--log", default="")
-    p.add_argument("--off", action="store_true", help="forward unchanged (A/B baseline through the same proxy)")
+    p.add_argument("--off", action="store_true",
+                   help="A/B baseline: same request handling and logging, but no tool-call transforms")
     p.add_argument("--experimental", action="store_true",
                    help="also run transforms the profile has not validated for this model + harness (for A/B tests)")
+    p.add_argument("--transforms", default=None,
+                   help="comma list overriding the profile's transforms (ablation arms); implies --experimental for them")
     p.add_argument("--verbose", action="store_true")
     ARGS = p.parse_args()
     UP = urllib.parse.urlparse(ARGS.upstream)
     PROFILE = json.loads(pathlib.Path(ARGS.profile).read_text())
+    if ARGS.transforms is not None:
+        PROFILE["transforms"] = [t for t in ARGS.transforms.split(",") if t]
+        ARGS.experimental = True
     STATE = State(pathlib.Path(ARGS.state) if ARGS.state else None)
     host, port = ARGS.listen.rsplit(":", 1)
     active = [t for t in PROFILE.get("transforms", []) if ARGS.experimental or validation_status(PROFILE, t) == "validated"]

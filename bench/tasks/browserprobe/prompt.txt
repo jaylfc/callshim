@@ -1,0 +1,7 @@
+The page in this folder is served at http://localhost:8301/. Measure it in a real browser (your browser tool, or a script that drives a headless browser), not by reading the HTML or CSS, in a phone landscape viewport of 932x430. Write report.json in this folder with exactly these keys:
+- "title": the page title
+- "canvas_css": [width, height] of the #game element's on-screen size in CSS pixels
+- "overlap": true if the #dpad element's box overlaps the #game element's box, else false
+- "hp": the value of window.gameState.player.hp
+- "console_errors": the number of console errors logged on load
+Then commit report.json with git.

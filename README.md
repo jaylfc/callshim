@@ -50,14 +50,18 @@ Point the harness's base URL at `http://127.0.0.1:8090/v1`.
 - `--off`: everything passes through unchanged, which gives an A/B baseline through the same proxy.
 - `--experimental`: also runs transforms not yet validated for this model + harness.
 
+## Test it on your setup
+See [docs/AB-TESTING.md](docs/AB-TESTING.md): `tools/ab.py` runs portable bench tasks through your harness with the proxy off and on (and one transform at a time), and writes a `submission.json` you can share. Results for more model and harness pairs are how transforms get validated.
+
 ## Finding a model's expected shapes
-- `tools/elicit.py` asks the model to use deliberately vague tools, or none at all, and records what it calls.
+- `tools/elicit.py` (tasks in `elicit/tasks.json`) asks the model to use deliberately vague tools, or none at all, and records what it calls.
 - The failure-mining notes in the omp-strata lab show how to classify a harness's failed calls.
 
 ## Tests
 ```
 python -m unittest discover tests      # transform units + end-to-end proxy with a fake streaming upstream
 node tests/test_prelude.mjs            # browser prelude against mocks shaped like oh-my-pi 18.4.4
+# tests/test_ab.py runs tools/ab.py end to end with a fake harness and a fake streaming server
 ```
 
 ## Status
