@@ -1,9 +1,9 @@
 /* EBMS prelude for oh-my-pi's JS eval browser facade. Idempotent; wraps the frozen globals with translators
-   for the shapes the model writes (lab experiments/004-ebms/failure-mining.md). Prints one "[ebms] ..." line
+   for the shapes the model writes (lab experiments/004-ebms/failure-mining.md). Prints one "[callshim] ..." line
    per translation so runs can be audited. */
-if (!globalThis.__ebms_browser && globalThis.browser) { globalThis.__ebms_browser = true; (() => {
+if (!globalThis.__callshim_browser && globalThis.browser) { globalThis.__callshim_browser = true; (() => {
   const B = globalThis.browser, J = globalThis.judge;
-  const say = m => console.log("[ebms] " + m);
+  const say = m => console.log("[callshim] " + m);
   const PAGE = /\b(document|window|getComputedStyle|innerWidth|innerHeight|localStorage|navigator\.|location\.)/;
   const BUN_ARGS = /^\s*(async\s*)?\(\s*\{[^)]*\b(page|tab|browser|wait|assert)\b/;
   const isPageCode = f => { const s = String(f); return PAGE.test(s) && !BUN_ARGS.test(s); };
@@ -11,8 +11,8 @@ if (!globalThis.__ebms_browser && globalThis.browser) { globalThis.__ebms_browse
     if (/^\(?\s*(async\s*)?(\(\s*\)|function\s*\()/.test(t) && /\)\s*\(\s*\)\s*;?$/.test(t)) return t;   // already an IIFE
     return /\breturn\b/.test(t) ? `(() => { ${t} })()` : t; };
   const wrapTab = t => {
-    if (!t || t.__ebms) return t;
-    const w = { ...t, __ebms: true, toString: () => String(t) };
+    if (!t || t.__callshim) return t;
+    const w = { ...t, __callshim: true, toString: () => String(t) };
     w.run = async (f, opts) => {
       if ((typeof f === "string" || typeof f === "function") && isPageCode(f)) {
         say("tab.run(page code) -> tab.evaluate (tab.run executes in Bun, where document/window do not exist)");
@@ -63,7 +63,7 @@ if (!globalThis.__ebms_browser && globalThis.browser) { globalThis.__ebms_browse
       if (a && typeof a === "object" && !Array.isArray(a) && b === undefined) {
         state = a.state ?? a.image ?? (Array.isArray(a.images) ? a.images[0] : undefined) ?? a.prompt ?? a.context;
         qs = a.questions ?? (a.question ? { q1: a.question } : undefined);
-        if (!qs) throw new Error("[ebms] judge(state, questions) needs questions, e.g. {fits: 'Does X fit?'}. For a free-text look at an image, use the read tool with <path>?q=<question>.");
+        if (!qs) throw new Error("[callshim] judge(state, questions) needs questions, e.g. {fits: 'Does X fit?'}. For a free-text look at an image, use the read tool with <path>?q=<question>.");
         say("judge({...}) -> judge(state, questions)");
       }
       if (qs && typeof qs === "object") {

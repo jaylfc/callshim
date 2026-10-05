@@ -1,7 +1,7 @@
-"""EBMS proxy: an OpenAI-compatible pass-through that translates a model's tool calls into the shapes the
+"""callshim proxy: an OpenAI-compatible pass-through that translates a model's tool calls into the shapes the
 harness expects.
 
-usage: python -m ebms.proxy --upstream http://127.0.0.1:8080 --listen 127.0.0.1:8090 --profile profiles/X.json
+usage: python -m callshim.proxy --upstream http://127.0.0.1:8080 --listen 127.0.0.1:8090 --profile profiles/X.json
        [--state FILE] [--log FILE] [--off]
 
 Only POST .../chat/completions is rewritten; every other path is passed through. Streamed tool-call deltas are
@@ -22,7 +22,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from .request import dumps, prepare, tool_schemas
 from .state import State
-from .transforms import Context, call_transforms
+from .transforms import Context, call_transforms, validation_status
 
 HOP = {"connection", "keep-alive", "transfer-encoding", "content-length", "host", "te", "trailer", "upgrade"}
 ARGS = None
@@ -45,7 +45,7 @@ def rewrite_call(call: dict, tools: dict) -> tuple[dict, list]:
         args = json.loads(call["arguments"] or "{}")
     except ValueError:
         return call, []
-    ctx = Context(profile=PROFILE, tools=tools, state=STATE)
+    ctx = Context(profile=PROFILE, tools=tools, state=STATE, experimental=ARGS.experimental)
     cur = {"id": call["id"], "name": call["name"], "arguments": args}
     for name, fn in call_transforms():
         if ctx.enabled(name):
@@ -65,7 +65,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def log_message(self, fmt, *a):
         if ARGS.verbose:
-            sys.stderr.write("ebms: " + (fmt % a) + "\n")
+            sys.stderr.write("callshim: " + (fmt % a) + "\n")
 
     def do_GET(self):
         self._forward("GET", b"", rewrite=False)
@@ -129,7 +129,7 @@ class Handler(BaseHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError):
             pass
         except Exception as e:
-            msg = dumps({"error": {"message": f"ebms proxy: {e!r}"}})
+            msg = dumps({"error": {"message": f"callshim proxy: {e!r}"}})
             try:
                 self.send_response(502)
                 self.send_header("Content-Type", "application/json")
@@ -225,14 +225,17 @@ def main():
     p.add_argument("--state", default="")
     p.add_argument("--log", default="")
     p.add_argument("--off", action="store_true", help="forward unchanged (A/B baseline through the same proxy)")
+    p.add_argument("--experimental", action="store_true",
+                   help="also run transforms the profile has not validated for this model + harness (for A/B tests)")
     p.add_argument("--verbose", action="store_true")
     ARGS = p.parse_args()
     UP = urllib.parse.urlparse(ARGS.upstream)
     PROFILE = json.loads(pathlib.Path(ARGS.profile).read_text())
     STATE = State(pathlib.Path(ARGS.state) if ARGS.state else None)
     host, port = ARGS.listen.rsplit(":", 1)
-    print(f"ebms proxy {'(off) ' if ARGS.off else ''}on {ARGS.listen} -> {ARGS.upstream}, profile {PROFILE.get('name')}, "
-          f"transforms {PROFILE.get('transforms')}", flush=True)
+    active = [t for t in PROFILE.get("transforms", []) if ARGS.experimental or validation_status(PROFILE, t) == "validated"]
+    print(f"callshim proxy {'(off) ' if ARGS.off else ''}on {ARGS.listen} -> {ARGS.upstream}, profile {PROFILE.get('name')}, "
+          f"active transforms {active}{' (experimental)' if ARGS.experimental else ''}", flush=True)
     ThreadingHTTPServer((host, int(port)), Handler).serve_forever()
 
 

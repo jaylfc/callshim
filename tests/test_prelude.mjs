@@ -19,8 +19,8 @@ globalThis.judge = async (state, questions) => {
   calls.push(["judge", state, questions]); return { ok: true };
 };
 const logs = []; const origLog = console.log; console.log = (...a) => logs.push(a.join(" "));
-eval(fs.readFileSync(new URL("../ebms/transforms/prelude_omp_browser.js", import.meta.url), "utf8"));
-eval(fs.readFileSync(new URL("../ebms/transforms/prelude_omp_browser.js", import.meta.url), "utf8"));   // idempotent
+eval(fs.readFileSync(new URL("../callshim/transforms/prelude_omp_browser.js", import.meta.url), "utf8"));
+eval(fs.readFileSync(new URL("../callshim/transforms/prelude_omp_browser.js", import.meta.url), "utf8"));   // idempotent
 
 // 1. positional open with viewport options
 const t = await browser.open("http://localhost:8123/", { width: 390, height: 844 });

@@ -4,8 +4,8 @@ import sys
 import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-from ebms.state import State
-from ebms.transforms import Context, aliases, eval_browser, hashline
+from callshim.state import State
+from callshim.transforms import Context, aliases, eval_browser, hashline
 
 OMP_TOOLS = {
     "read": {"type": "object", "properties": {"path": {"type": "string"}, "i": {"type": "string"}}, "required": ["path"]},
@@ -21,11 +21,26 @@ PROFILE = {"transforms": ["aliases", "hashline", "eval_browser"]}
 
 
 def ctx():
-    return Context(profile=PROFILE, tools=OMP_TOOLS, state=State(None))
+    return Context(profile=PROFILE, tools=OMP_TOOLS, state=State(None), experimental=True)
 
 
 def call(name, args):
     return {"id": "c1", "name": name, "arguments": args}
+
+
+class ValidationGate(unittest.TestCase):
+    """Only transforms validated for this model + harness run, unless --experimental."""
+    def test_unvalidated_off_by_default(self):
+        c = Context(profile=PROFILE, tools=OMP_TOOLS, state=State(None))
+        self.assertFalse(c.enabled("aliases"))
+
+    def test_validated_on(self):
+        prof = dict(PROFILE, validation={"aliases": {"status": "validated", "evidence": "A/B"}})
+        c = Context(profile=prof, tools=OMP_TOOLS, state=State(None))
+        self.assertTrue(c.enabled("aliases")); self.assertFalse(c.enabled("hashline"))
+
+    def test_experimental_flag(self):
+        self.assertTrue(ctx().enabled("hashline"))
 
 
 class HashlineOps(unittest.TestCase):
@@ -122,7 +137,7 @@ class ElicitedShapes(unittest.TestCase):
     def test_context_replacement_to_replace_mode(self):
         tools = dict(OMP_TOOLS, edit={"type": "object", "properties": {"path": {"type": "string"}, "old_string": {"type": "string"},
                  "new_string": {"type": "string"}, "replace_all": {"type": "boolean"}}, "required": ["path", "old_string", "new_string"]})
-        c = Context(profile=PROFILE, tools=tools, state=State(None))
+        c = Context(profile=PROFILE, tools=tools, state=State(None), experimental=True)
         out = aliases.apply(call("edit_file", {"path": "src/game.js", "context": "SPEED = 2", "replacement": "SPEED = 3"}), c)
         self.assertEqual(out, {"id": "c1", "name": "edit", "arguments": {"path": "src/game.js", "old_string": "SPEED = 2", "new_string": "SPEED = 3"}})
 
@@ -130,7 +145,7 @@ class ElicitedShapes(unittest.TestCase):
 class EvalBrowser(unittest.TestCase):
     def test_prelude_added_to_js(self):
         out = eval_browser.apply(call("eval", {"language": "js", "code": "const t = await browser.open('http://x')"}), ctx())
-        self.assertIn("__ebms_browser", out["arguments"]["code"])
+        self.assertIn("__callshim_browser", out["arguments"]["code"])
 
     def test_python_untouched(self):
         orig = call("eval", {"language": "py", "code": "t = await browser.open(name='a', url='x')"})

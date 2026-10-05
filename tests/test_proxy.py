@@ -1,4 +1,4 @@
-"""End-to-end: fake streaming upstream -> ebms proxy -> client. Checks buffering, rewrite and history restore."""
+"""End-to-end: fake streaming upstream -> callshim proxy -> client. Checks buffering, rewrite and history restore."""
 import json
 import pathlib
 import socket
@@ -45,9 +45,9 @@ class ProxyEndToEnd(unittest.TestCase):
         cls.server = ThreadingHTTPServer(("127.0.0.1", up), Fake)
         threading.Thread(target=cls.server.serve_forever, daemon=True).start()
         cls.log = ROOT / "tests" / ".proxy-test.log"; cls.log.unlink(missing_ok=True)
-        cls.proc = subprocess.Popen([sys.executable, "-m", "ebms.proxy", "--upstream", f"http://127.0.0.1:{up}",
+        cls.proc = subprocess.Popen([sys.executable, "-m", "callshim.proxy", "--upstream", f"http://127.0.0.1:{up}",
                                      "--listen", f"127.0.0.1:{cls.port}", "--profile", str(ROOT / "profiles/qwen3.8-flash-next-coder.json"),
-                                     "--log", str(cls.log)], cwd=ROOT, stdout=subprocess.DEVNULL)
+                                     "--log", str(cls.log), "--experimental"], cwd=ROOT, stdout=subprocess.DEVNULL)
         for _ in range(50):
             try: socket.create_connection(("127.0.0.1", cls.port), 0.2).close(); break
             except OSError: time.sleep(0.1)

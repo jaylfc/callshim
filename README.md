@@ -1,4 +1,6 @@
-# EBMS: expected-by-model shims
+# callshim
+
+Expected-by-model tool-call shims (EBMS).
 
 A model calls tools the way it learned to. When the harness expects something slightly different, the call fails, the model retries, and the session loses time. EBMS takes the opposite approach to prompt engineering:
 1. Measure the tool shapes a model actually produces.
@@ -7,7 +9,7 @@ A model calls tools the way it learned to. When the harness expects something sl
 It runs as an OpenAI-compatible proxy between any agent harness and any model server.
 
 ```
-harness  ->  ebms proxy  ->  model server
+harness  ->  callshim proxy  ->  model server
               |  request: restore the model's own earlier calls in history, add defaults, strip extras
               |  response: buffer streamed tool calls, translate them, pass text and reasoning through
 ```
@@ -27,12 +29,26 @@ harness  ->  ebms proxy  ->  model server
 
 Profiles (`profiles/*.json`) choose the transforms per model and harness, and can add tool aliases and request defaults, such as sampling fields for a harness that cannot send them.
 
+## Only validated shims run
+A shim can also hurt: one report found that a repair proxy lowered a small model's tool-call score. So every transform in a profile carries a validation status for that exact model and harness:
+
+```json
+"validation": {"hashline": {"status": "validated", "evidence": "A/B: 36 runs, edit errors 24% -> 9%, pass rate unchanged"}}
+```
+
+- The proxy applies only `validated` transforms.
+- `--experimental` also runs `experimental` ones, and is meant for A/B tests.
+- A transform becomes `validated` only after an A/B on that model + harness shows it helps and does no harm.
+- Published profiles contain only validated model/harness combinations.
+
 ## Use
 ```
-python -m ebms.proxy --upstream http://127.0.0.1:8080 --listen 127.0.0.1:8090 \
+python -m callshim.proxy --upstream http://127.0.0.1:8080 --listen 127.0.0.1:8090 \
     --profile profiles/qwen3.8-flash-next-coder.json --state ebms-state.json --log ebms-log.jsonl
 ```
-Point the harness's base URL at `http://127.0.0.1:8090/v1`. With `--off`, everything passes through unchanged, which gives an A/B baseline through the same proxy.
+Point the harness's base URL at `http://127.0.0.1:8090/v1`.
+- `--off`: everything passes through unchanged, which gives an A/B baseline through the same proxy.
+- `--experimental`: also runs transforms not yet validated for this model + harness.
 
 ## Finding a model's expected shapes
 - `tools/elicit.py` asks the model to use deliberately vague tools, or none at all, and records what it calls.
@@ -45,4 +61,4 @@ node tests/test_prelude.mjs            # browser prelude against mocks shaped li
 ```
 
 ## Status
-v0.1, 2026-10-05. Built from one model (Qwen3.8-Flash-Next Coder) on one harness (oh-my-pi). A before/after A/B test on that stack is next. Private until the numbers say whether it works.
+v0.1, 2026-10-05. Built from one model (Qwen3.8-Flash-Next Coder) on one harness (oh-my-pi). A before/after A/B test on that stack is next. Every transform in the one profile is still `experimental`; the A/B is running. Private until the numbers say whether it works.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """EBMS elicitation (experiment 004): ask the model to use vaguely described tools and record the call shapes it invents.
 
-usage: ebms_elicit.py BASE_URL MODEL [--samples 3] [--domains edit,browser] [--out FILE]
+usage: tools/elicit.py BASE_URL MODEL [--samples 3] [--domains edit,browser] [--out FILE]
 Production-like settings: medium effort, 3072 thinking budget, temperature 1.0 / top_p 0.95 / top_k 20.
 One JSON line per sample: domain, task index, task, the tool-call arguments (or text if no call), timing.
 Resumable: samples already in the output file are skipped.
