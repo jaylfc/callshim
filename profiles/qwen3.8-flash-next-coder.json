@@ -1,0 +1,10 @@
+{
+ "name": "qwen3.8-flash-next-coder (oh-my-pi)",
+ "model": "qwen3.8-flash-next-coder-iq1_m",
+ "harness": "oh-my-pi 18.4.4",
+ "evidence": "omp-strata-lab experiments/004-ebms: failure-mining.md (563 edit, 376 eval, 144 write calls) and elicit.jsonl",
+ "transforms": ["aliases", "hashline", "eval_browser"],
+ "tool_aliases": {},
+ "request_defaults": {},
+ "strip_cache_markers": false
+}
