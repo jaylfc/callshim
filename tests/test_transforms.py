@@ -142,6 +142,23 @@ class ElicitedShapes(unittest.TestCase):
         self.assertEqual(out, {"id": "c1", "name": "edit", "arguments": {"path": "src/game.js", "old_string": "SPEED = 2", "new_string": "SPEED = 3"}})
 
 
+class RoundOneShapes(unittest.TestCase):
+    """Failed calls from the experiment 004 A/B, round 1."""
+    def test_long_intent_shortened(self):
+        c = Context(profile=dict(PROFILE, intent_max_chars=200), tools=OMP_TOOLS, state=State(None), experimental=True)
+        out = aliases.apply(call("read", {"path": "/tmp/tapcount.png?q=ok?", "i": "x" * 248}), c)
+        self.assertEqual(len(out["arguments"]["i"]), 200)
+        self.assertEqual(out["arguments"]["path"], "/tmp/tapcount.png?q=ok?")
+
+    def test_short_intent_untouched(self):
+        orig = call("read", {"path": "a.js", "i": "Reading a"})
+        self.assertEqual(aliases.apply(orig, Context(profile=dict(PROFILE, intent_max_chars=200), tools=OMP_TOOLS, state=State(None), experimental=True)), orig)
+
+    def test_empty_glob(self):
+        out = aliases.apply(call("glob", {"path": ""}), ctx())
+        self.assertEqual(out["arguments"], {"path": "*"})
+
+
 class EvalBrowser(unittest.TestCase):
     def test_prelude_added_to_js(self):
         out = eval_browser.apply(call("eval", {"language": "js", "code": "const t = await browser.open('http://x')"}), ctx())

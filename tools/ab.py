@@ -106,6 +106,9 @@ def run_one(a, task: str, arm: str, rep: int, out: pathlib.Path) -> dict:
     work = run_dir / "work"
     shutil.copytree(tdir / "files", work)
     git("init", "-q", cwd=work)
+    # A local identity, so the model's commits do not fail on a machine with no global git config.
+    git("config", "user.name", "callshim bench", cwd=work)
+    git("config", "user.email", "bench@callshim.invalid", cwd=work)
     git("add", "-A", cwd=work)
     git("-c", "user.name=bench", "-c", "user.email=bench@callshim", "commit", "-qm", "task start", cwd=work)
     prompt = (tdir / "prompt.txt").read_text()

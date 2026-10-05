@@ -11,5 +11,6 @@
  },
  "tool_aliases": {},
  "request_defaults": {},
- "strip_cache_markers": false
+ "strip_cache_markers": false,
+ "intent_max_chars": 200
 }

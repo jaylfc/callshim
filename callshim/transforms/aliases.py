@@ -94,9 +94,19 @@ def _coerce(value, schema: dict):
     return value
 
 
+INTENT_KEYS = ("i", "__intent")
+
+
 def _fit_args(args: dict, schema: dict, tool: str, ctx, call_name: str) -> dict:
     props = schema.get("properties") or {}
     out = dict(args)
+    # Intent labels over the harness's limit fail the whole call (omp: "`i` is a short intent label (at most 200
+    # chars)"). Shorten the label; it is a note to the user, not an argument the tool acts on.
+    for key in INTENT_KEYS:
+        limit = (props.get(key) or {}).get("maxLength") or ctx.profile.get("intent_max_chars")
+        if isinstance(out.get(key), str) and limit and len(out[key]) > limit:
+            out[key] = out[key][: max(1, limit - 1)].rstrip() + "…"
+            ctx.note("aliases", key, limit, f"{call_name}: intent label shortened to {limit} chars")
     # Line ranges: fold start/end or offset/limit into "path:a-b" when the tool takes no range arguments.
     if "path" in props and not any(k in props for k in RANGE_START + RANGE_END + RANGE_LIMIT):
         start = next((out.pop(k) for k in RANGE_START if k in out), None)
@@ -118,6 +128,10 @@ def _fit_args(args: dict, schema: dict, tool: str, ctx, call_name: str) -> dict:
                 if n in out and n not in props:
                     out[canonical] = out.pop(n)
                     break
+    # An empty glob means "list here".
+    if tool in ("glob", "find") and out.get("path") == "" and "pattern" not in out:
+        out["path"] = "*"
+        ctx.note("aliases", "", "*", f"{call_name}: empty glob -> *")
     # glob-style tools that take the pattern in `path`: join a directory and a pattern.
     if tool in ("glob", "find") and "pattern" not in props and "pattern" in out:
         pattern = str(out.pop("pattern"))

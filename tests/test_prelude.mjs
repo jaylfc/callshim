@@ -7,6 +7,8 @@ const makeTab = name => Object.freeze({
   evaluate: async f => (calls.push(["evaluate", name, String(f)]), "EVAL"),
   run: async (f, o) => (calls.push(["run", name, String(f)]), "RUN"),
   html: async (s) => (calls.push(["html", name, s]), "<html>"),
+  title: async () => (calls.push(["title", name]), "Lantern Run"),
+  url: async () => (calls.push(["url", name]), "http://x/"),
   screenshot: async () => "png",
 });
 globalThis.browser = Object.freeze({
@@ -52,5 +54,9 @@ assert.equal(logs.length, before);
 // 10. browser.goto / navigate from elicitation
 await browser.goto("http://localhost:8201");
 assert.deepEqual(calls.at(-1), ["open", { name: "main", url: "http://localhost:8201" }]);
+// 11. invented tab methods from the A/B (waitForLoad, getTitle, getCurrentUrl)
+const t2 = await browser.open({ name: "probe", url: "http://localhost:8301/" });
+await t2.waitForLoad(); assert.equal(calls.at(-1)[0], "evaluate");
+assert.equal(await t2.getTitle(), "Lantern Run"); assert.equal(await t2.getCurrentUrl(), "http://x/");
 console.log = origLog;
 console.log("prelude ok;", logs.length, "translations logged:", [...new Set(logs)].join(" | ").slice(0, 300));

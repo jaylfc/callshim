@@ -20,6 +20,10 @@ if (!globalThis.__callshim_browser && globalThis.browser) { globalThis.__callshi
       }
       return t.run(f, opts);
     };
+    // Method names the model invents for the tab (A/B round 1): waitForLoad, getTitle, getCurrentUrl.
+    if (!("waitForLoad" in t)) w.waitForLoad = async () => { say("tab.waitForLoad() -> tab.evaluate(document.readyState); open() already waits for load"); return t.evaluate("document.readyState"); };
+    if (!("getTitle" in t)) w.getTitle = () => (say("tab.getTitle() -> tab.title()"), t.title());
+    if (!("getCurrentUrl" in t)) w.getCurrentUrl = () => (say("tab.getCurrentUrl() -> tab.url()"), t.url());
     w.html = (sel, ...rest) => (sel && typeof sel === "object" && !Array.isArray(sel) && "selector" in sel)
       ? (say("tab.html({selector}) -> tab.html(selector)"), t.html(sel.selector, ...rest)) : t.html(sel, ...rest);
     return w;
